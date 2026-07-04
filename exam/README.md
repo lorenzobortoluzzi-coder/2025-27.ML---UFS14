@@ -4,7 +4,7 @@ Il progetto è una rete neurale convoluzionale che, data la foto di un rifiuto, 
 
 Autore: Lorenzo Bortoluzzi
 
-## Setup/How to run this project
+## Setup/
 
 Tutto il progetto sta in un unico notebook: [`smart_recycling_bin.ipynb`](./smart_recycling_bin.ipynb).
 
