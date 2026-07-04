@@ -1,33 +1,111 @@
-# Project name/idea
+# Smart Recycling Bin — CNN per la classificazione dei rifiuti
+
+Il progetto è una rete neurale convoluzionale che, data la foto di un rifiuto, capisce di che materiale è fatto e quindi in che bidone andrebbe buttato. L'idea è quella di un "bidone intelligente" che aiuta a fare la raccolta differenziata correttamente.
+
+Autore: Lorenzo Bortoluzzi
 
 ## Setup/How to run this project
-In questa sezione andrete ad aggiungere i comandi necessari per far partire il progetto. Non solo, dovrete specificare anche eventuali requisiti di sistema necessari (es. versione specifica di Python, eventuali librerie esterne)
+
+Tutto il progetto sta in un unico notebook: [`smart_recycling_bin.ipynb`](./smart_recycling_bin.ipynb).
+
+Il modo più semplice per eseguirlo è Google Colab:
+
+1. caricare il notebook su [Google Colab](https://colab.research.google.com/)
+2. attivare la GPU gratuita da `Runtime → Change runtime type → T4 GPU`
+3. eseguire le celle in ordine dall'alto verso il basso
+
+Il dataset si scarica da solo alla prima esecuzione tramite la libreria `kagglehub`, non serve nessun account Kaggle.
+
+Per eseguirlo in locale invece serve:
+
+- Python 3.10 o superiore
+- circa 200 MB di spazio per il dataset
+- una GPU non è obbligatoria ma senza il training è lento
+
+```bash
+pip install -r requirements.txt
+jupyter notebook smart_recycling_bin.ipynb
+```
+
+Le librerie usate sono nel file [`requirements.txt`](./requirements.txt): torch e torchvision per il modello, numpy e matplotlib per calcoli e grafici, kagglehub per il dataset, scikit-learn per le metriche, opencv-python e Pillow per la parte webcam/immagini.
+
+Nota: le ultime celle (predizione su una foto propria e cattura dalla webcam) hanno bisogno di un'immagine caricata a mano o di una webcam. Tutto il resto del notebook funziona senza.
 
 ## Spiegazione del progetto
-Qual è il suo obbiettivo? Quale problema può risolvere? Di che si tratta?
 
-## Dati 
-Potete risalire al dataset e/o ai dati grezzi utilizzati? Perchè avete usato quelli nello specifico? Quali caratteristiche hanno? Come avete gestito i dati mancanti e/o quelli formattati non correttamente?
+L'obiettivo è addestrare un classificatore di immagini che riconosca il materiale di un rifiuto a partire da una foto.
+
+Il problema che vorrebbe risolvere è quello degli errori nella raccolta differenziata: quando un rifiuto finisce nel bidone sbagliato il materiale riciclabile si contamina e il riciclo funziona peggio. Un bidone con una fotocamera e questo modello a bordo potrebbe dire all'utente dove buttare l'oggetto, o in prospettiva smistarlo da solo.
+
+Come funziona: uso il transfer learning, cioè parto da MobileNetV2 già addestrata su ImageNet, congelo i layer convoluzionali (che sanno già riconoscere bordi, texture e forme) e riaddestro solo l'ultimo pezzo sulle 6 classi di rifiuti. Il flusso del notebook è: download del dataset → data augmentation → training con validazione a ogni epoca → valutazione finale sul test set → salvataggio del modello → prova su foto reali.
+
+Il risultato finale è **79,74% di accuracy sul test set** (380 immagini mai viste durante il training).
+
+## Dati
+
+Ho usato [TrashNet](https://github.com/garythung/trashnet), scaricato da Kaggle ([feyzazkefe/trashnet](https://www.kaggle.com/datasets/feyzazkefe/trashnet)) con `kagglehub`, quindi chi riesegue il notebook scarica esattamente gli stessi dati.
+
+L'ho scelto perché è il dataset più usato per questo tipo di problema: sono foto vere di rifiuti, già etichettate e già divise in una cartella per classe, che è esattamente il formato che si aspetta `ImageFolder` di PyTorch. L'alternativa era farmi un dataset da solo fotografando rifiuti, ma ci avrei messo settimane per avere molte meno immagini.
+
+Caratteristiche: 2.527 immagini a colori in 6 classi: cardboard (cartone), glass (vetro), metal (metallo), paper (carta), plastic (plastica), trash (indifferenziato). Le classi non sono bilanciate, trash è la più piccola.
+
+Split: 70% training (1.768 immagini), 15% validation (379), 15% test (380), con seed fissato così lo split è riproducibile.
+
+Sui dati mancanti: essendo immagini e non tabelle non ci sono valori mancanti veri e propri. Però le immagini vanno uniformate: le ridimensiono tutte a 224×224 e le normalizzo con media e deviazione standard di ImageNet, perché il modello pre-addestrato si aspetta input fatti così. Sul training set applico anche data augmentation (flip, rotazioni, variazioni di colore) per compensare il fatto che il dataset è piccolo.
 
 ## Ciclo di vita ML
-Rispetto alle fasi principali del ciclo di vita ML (raccolta dati, training, validazione, deploy, monitoring), come immaginate di applicarli al vostro progetto? 
 
-## MLOps 
-Cosa andrete a monitorare? In base a cosa pensate potreste dover fare re-training?
+1. **Raccolta dati**: automatizzata nel notebook con kagglehub, versione fissa del dataset, quindi riproducibile.
+2. **Training**: 15 epoche di transfer learning con Adam, CrossEntropyLoss e uno scheduler che dimezza il learning rate ogni tot epoche (0.001 → 0.0005 → 0.00025). Nel notebook ci sono le curve di apprendimento (loss e accuracy, train vs validation) per controllare overfitting e underfitting.
+3. **Validazione**: a ogni epoca valuto sul validation set, che non viene mai usato per aggiornare i pesi. Alla fine valuto sul test set con confusion matrix e classification report per classe.
+4. **Deploy**: questa fase è solo progettata, non realizzata. Il modello viene salvato come checkpoint (`smart_recycling_bin.pth`, con dentro pesi, classi e metriche) e si può ricaricare per fare solo inferenza. Il deploy realistico sarebbe su un dispositivo tipo Raspberry Pi con fotocamera dentro al bidone: ho scelto MobileNetV2 anche per questo, perché è abbastanza leggera per girare su hardware del genere.
+5. **Monitoring**: anche questa progettata, la descrivo nella sezione MLOps.
+
+## MLOps
+
+Cosa monitorerei se il modello fosse in produzione:
+
+- l'accuracy per classe, non solo quella media: già adesso trash ha f1-score 0,55 mentre cardboard 0,87, la media nasconde le classi che vanno male
+- la confidenza delle predizioni: se aumentano le predizioni a bassa confidenza vuol dire che arrivano immagini diverse da quelle del training (data drift)
+- le correzioni degli utenti: se l'utente corregge il bidone suggerito, quella è un'etichetta gratis che dice dove il modello sbaglia
+- la distribuzione delle classi predette: se il bidone inizia a dire "plastica" per tutto probabilmente c'è un problema a monte (fotocamera sporca, luce cambiata)
+
+Quando rifarei il training:
+
+- se l'accuracy sul campo scende sotto una soglia decisa prima (per esempio 75%)
+- quando si accumulano abbastanza foto reali corrette dagli utenti, che sono più rappresentative di quelle "pulite" di TrashNet
+- se cambiano i materiali in circolazione (nuovi packaging) o si aggiungono categorie di raccolta
 
 ## Rischi, assunzioni e limiti
-Rispetto all'idea che state presentando, avete identificato dei limiti o dei rischi? Avete dato per assunto qualcosa?
 
-Il progetto è funzionante dall'inizio alla fine? In caso lo sia, come potreste ampliarlo?
-In caso non lo sia, quali difficoltà avete incontrato?
+Assunzioni che ho fatto:
 
-## Ulteriori informazioni 
-Qualsiasi altra informazione che non fa parte delle categorie di cui sopra, annotatela qui.
+- che le foto di TrashNet (oggetto singolo, sfondo neutro, buona luce) siano abbastanza simili a quelle che un bidone vero scatterebbe. È l'assunzione più debole del progetto.
+- che ogni rifiuto sia di un solo materiale: il modello dà una sola classe per immagine, ma tanti rifiuti veri sono misti (bottiglia di plastica con etichetta di carta).
 
-**Ricordate**: 
-1. Niente è scontato! 
-2. Se una decisione è importante, deve essere rintracciabile in un documento o in un artefatto nel repository.
-   
-Ultimo punto: non abbiate paura di "uscire fuori dagli schemi". Tutte le idee migliori, inizialmente, sembravano folli.
+Limiti e rischi:
 
-In bocca al lupo!
+- il dataset è piccolo (2.527 immagini) e sbilanciato: trash è la classe peggiore (f1 0,55, solo 24 immagini nel test set) proprio perché ha pochi esempi ed è molto varia al suo interno
+- con foto vere fatte col telefono (sfondi pieni di roba, luce variabile) l'accuracy sarà sicuramente più bassa del 79,74% del test set
+- dalla confusion matrix, metallo e plastica si confondono tra loro più delle altre classi (superfici riflettenti simili)
+- le 6 classi non corrispondono ai bidoni reali, che cambiano da comune a comune (in alcuni carta e cartone vanno insieme, ecc.)
+
+**Il progetto è funzionante dall'inizio alla fine?** Sì: tutte le celle sono state eseguite, dal download dei dati al salvataggio del modello, e gli output sono visibili nel notebook.
+
+Come lo amplierei:
+
+- fine-tuning degli ultimi blocchi convolutivi (ora sono congelati) per provare a guadagnare accuracy
+- raccogliere foto reali "sporche" per ridurre la distanza dal mondo reale
+- passare dalla classificazione all'object detection per gestire più rifiuti nella stessa foto
+- convertire il modello in un formato mobile (TorchScript/ONNX) e provarlo su Raspberry Pi
+- rendere configurabile la mappa classi → bidoni in base alle regole del proprio comune
+
+## Ulteriori informazioni
+
+Nel notebook ci sono tre parti extra rispetto al progetto base:
+
+- **Grad-CAM**: fa vedere dove guarda la rete quando classifica, con una heatmap sulle zone dell'immagine che hanno pesato di più. L'ho aggiunta per verificare che il modello guardi l'oggetto e non lo sfondo.
+- **Cattura da webcam** con OpenCV: si fotografa un oggetto vero e si vede la predizione al volo. È anche il test più onesto della differenza tra dataset e realtà.
+- **Segmentazione con DeepLabV3**: un esperimento per isolare l'oggetto dallo sfondo prima di classificarlo.
+
+Le scelte progettuali principali, con le alternative che avevo considerato, sono nel [decision-log](./decision-log.md).
