@@ -4,33 +4,6 @@ Il progetto è una rete neurale convoluzionale che, data la foto di un rifiuto, 
 
 Autore: Lorenzo Bortoluzzi
 
-## Setup/
-
-Tutto il progetto sta in un unico notebook: [`smart_recycling_bin.ipynb`](./smart_recycling_bin.ipynb).
-
-Il modo più semplice per eseguirlo è Google Colab:
-
-1. caricare il notebook su [Google Colab](https://colab.research.google.com/)
-2. attivare la GPU gratuita da `Runtime → Change runtime type → T4 GPU`
-3. eseguire le celle in ordine dall'alto verso il basso
-
-Il dataset si scarica da solo alla prima esecuzione tramite la libreria `kagglehub`, non serve nessun account Kaggle.
-
-Per eseguirlo in locale invece serve:
-
-- Python 3.10 o superiore
-- circa 200 MB di spazio per il dataset
-- una GPU non è obbligatoria ma senza il training è lento
-
-```bash
-pip install -r requirements.txt
-jupyter notebook smart_recycling_bin.ipynb
-```
-
-Le librerie usate sono nel file [`requirements.txt`](./requirements.txt): torch e torchvision per il modello, numpy e matplotlib per calcoli e grafici, kagglehub per il dataset, scikit-learn per le metriche, opencv-python e Pillow per la parte webcam/immagini.
-
-Nota: le ultime celle (predizione su una foto propria e cattura dalla webcam) hanno bisogno di un'immagine caricata a mano o di una webcam. Tutto il resto del notebook funziona senza.
-
 ## Spiegazione del progetto
 
 L'obiettivo è addestrare un classificatore di immagini che riconosca il materiale di un rifiuto a partire da una foto.
