@@ -1,5 +1,7 @@
 # Scenario 2 — Classificazione contenuti per una piattaforma video
 
+**Gruppo: Suicide Squad** — Lorenzo Bortoluzzi · Elia Samarati · Tommaso Bruzzese · Massimiliano Salvi
+
 *Svolgimento del nostro gruppo (4 persone). Questo è il **README**; le decisioni motivate e le note su ruoli e handover sono nel file [`decision-log.md`](./decision-log.md). Abbiamo scelto di raccontare non solo cosa faremmo, ma soprattutto **come ci siamo arrivati ragionando insieme**.*
 
 **Da dove siamo partiti come gruppo.** La prima cosa su cui ci siamo confrontati non è stata "quale modello usare", ma *qual è davvero il problema*. Ci siamo detti: il team di moderazione non riesce a guardare tutto, quindi il valore non è "un modello che indovina", ma **un sistema che decide di cosa possono occuparsi gli umani e cosa no**. Da qui è nato tutto il resto: il modello per noi è un *filtro di smistamento*, non un giudice. Ci siamo concentrati in particolare su due cose — **come gestire i casi in cui il modello non è sicuro** e **come impostare bene le fasi di lavoro** — perché lì abbiamo capito che si gioca la riuscita del progetto.
