@@ -24,12 +24,6 @@ Alternative: ResNet50, EfficientNet, VGG16, tutte più grandi e probabilmente un
 
 Ho scelto MobileNetV2 perché il caso d'uso finale è un bidone intelligente, quindi un dispositivo embedded tipo Raspberry Pi, non un server con GPU. MobileNetV2 nasce per il mobile: pochi parametri e inferenza veloce su CPU. Ho preferito essere coerente con il deploy immaginato piuttosto che guadagnare qualche punto di accuracy. È anche più leggera da addestrare sulla GPU gratuita di Colab.
 
-## 5. Congelare i layer convoluzionali
-
-Alternativa: fine-tuning di tutto il modello o degli ultimi blocchi.
-
-Con un dataset piccolo, aggiornare milioni di parametri pre-addestrati rischia di rovinare le feature buone di ImageNet e di andare in overfitting. Congelando il backbone alleno solo il classificatore finale: training più veloce e più stabile. Il fine-tuning degli ultimi blocchi resta la prima cosa che proverei come ampliamento (l'ho scritto anche nel README).
-
 ## 6. Data augmentation solo sul training set
 
 Alternativa: nessuna augmentation.
