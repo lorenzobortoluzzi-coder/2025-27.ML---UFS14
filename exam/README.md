@@ -108,4 +108,31 @@ Nel notebook ci sono tre parti extra rispetto al progetto base:
 - **Cattura da webcam** con OpenCV: si fotografa un oggetto vero e si vede la predizione al volo. È anche il test più onesto della differenza tra dataset e realtà.
 - **Segmentazione con DeepLabV3**: un esperimento per isolare l'oggetto dallo sfondo prima di classificarlo.
 
+## Perché ho scelto questo progetto
+
+Non volevo un progetto "da esercizio", tipo riconoscere cani e gatti, che si dimentica appena consegnato. Cercavo qualcosa che avesse un senso anche fuori dall'aula, e la raccolta differenziata mi è sembrata perfetta: è un problema che riguarda tutti tutti i giorni, sbagliare bidone è facilissimo, e il fatto che una macchina possa aiutarti a farlo bene mi è sembrato un uso concreto e onesto del deep learning. Mi piaceva anche l'idea di poter mostrare il progetto a chiunque — anche a chi non sa niente di reti neurali — e farmi capire in una frase: "gli fai vedere una foto e ti dice in che bidone va".
+
+## I ragionamenti dietro le scelte (i compromessi che ho accettato)
+
+La cosa che ho capito facendo questo progetto è che il deep learning è quasi tutto una questione di **compromessi**, non di trovare "la risposta giusta". Alcuni che ho dovuto affrontare:
+
+- **Accuratezza contro leggerezza.** Avrei potuto usare un modello più grande (tipo ResNet) e forse guadagnare qualche punto di accuracy. Ho scelto MobileNetV2, più leggera e meno precisa, perché ho ragionato sul *dove* girerebbe davvero il modello: dentro un bidone, cioè su un dispositivo piccolo, non su un supercomputer. Ho preferito un modello coerente con l'uso reale piuttosto che un numero più bello nel report.
+- **Fare in fretta contro imparare bene.** Congelando i layer del modello pre-addestrato ho reso il training velocissimo, ma ho rinunciato a lasciargli "riadattare" tutto ai rifiuti. È un compromesso che rifarei, perché con così poche immagini lasciare libero tutto il modello lo avrebbe fatto peggiorare.
+- **Un numero solo contro la verità.** Sarebbe stato comodo scrivere "79,74% di accuracy" e fermarmi. Ma quel numero da solo mente: nasconde che sulla classe "trash" il modello va male (f1 0,55). Ho preferito guardare le metriche per singola classe, anche se raccontano una storia meno bella, perché è quella vera.
+
+## Cosa ho imparato e le difficoltà che ho incontrato
+
+La lezione più grande è stata che **il modello è solo metà del lavoro**. All'inizio pensavo che il difficile fosse "far funzionare la rete neurale", e invece quello è quasi la parte più semplice grazie al transfer learning. Il difficile è tutto il resto: capire se i dati sono buoni, accorgersi che una classe è sbilanciata, non farsi ingannare da un'accuratezza alta, ragionare su cosa succederebbe con foto vere invece di quelle "pulite" del dataset.
+
+Le difficoltà concrete:
+- **La classe "trash"** è stata un problema fin da subito: poche immagini e tutte diverse tra loro (è "tutto il resto"), quindi il modello fa fatica. Ho capito che non era un mio errore di codice ma un limite dei dati, e questo è già un risultato: saperlo riconoscere.
+- **Il divario tra dataset e realtà.** Quando ho provato la webcam con oggetti veri, il modello sbagliava più che sul test set. Lì ho toccato con mano la differenza tra "funziona sui dati" e "funziona nel mondo".
+- **Non fidarmi dei numeri belli.** La tentazione di guardare solo l'accuracy complessiva è forte; ho imparato a diffidarne quando i dati sono sbilanciati.
+
+## Una riflessione oltre il progetto
+
+Facendo questo lavoro mi sono anche chiesto: *fino a che punto è giusto fidarsi di un modello del genere?* Un bidone intelligente che sbaglia non è drammatico — al massimo un rifiuto finisce nel posto sbagliato. Ma il ragionamento cambia se penso a modelli simili usati per decisioni più delicate. Qui il rischio è basso, e proprio per questo è un buon banco di prova per ragionare su un principio che vale sempre: un modello va usato come **aiuto** a una persona, non come sostituto cieco. Nel mio caso il bidone dovrebbe *suggerire*, lasciando all'utente l'ultima parola — soprattutto sui casi in cui è poco sicuro. È la stessa idea di prudenza che, in scala molto più grande, serve in qualsiasi sistema di intelligenza artificiale.
+
+---
+
 Le scelte progettuali principali, con le alternative che avevo considerato, sono nel [decision-log](./decision-log.md).
