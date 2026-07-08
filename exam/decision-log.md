@@ -69,7 +69,7 @@ Salvare solo i pesi produce un file più leggero e portabile, che non dipende da
 
 Alternative: training in locale, servizi cloud a pagamento.
 
-Colab dà una GPU gratis che per questo training (backbone congelato, pochi minuti) è più che sufficiente, e non richiede di installare niente sul proprio PC. Chiunque può rieseguire il progetto, prof compresa. Il notebook resta comunque eseguibile in locale, i requisiti sono nel README.
+Colab dà una GPU gratis che per questo training (backbone congelato, pochi minuti) è più che sufficiente, e non richiede di installare niente sul proprio PC. Il notebook resta comunque eseguibile in locale, i requisiti sono nel README.
 
 ## 13. Le parti extra: Grad-CAM, webcam, segmentazione
 
